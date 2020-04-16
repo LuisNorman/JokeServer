@@ -106,10 +106,8 @@ public class JokeClientAdmin {
 						System.out.println("\nNow communicating with: "+serverName +", port 4545");
 					}
 				}
-				else if (action.indexOf("quit") >= 0) {
-					System.out.println("Quitting client per user request.");
+				else if (action.indexOf("quit") > 0) 
 					break; // break loop if requested by client
-				}
 				else {
 					if (getCurrentServer() == 1) 
 						changeMode(serverName); // Change the mode on primary server

@@ -519,8 +519,6 @@ public class JokeServer {
 
 	public static void main(String[] args) throws IOException {
 
-		System.out.println("---------------------------------------------------------");
-
 		Mode mode = new Mode(); // Create mode instance
 		int q_len = 10; // 10 simultaneous connection allowed
 		int port = 4545; // primary server listens on port 4545
