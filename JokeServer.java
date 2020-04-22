@@ -238,27 +238,18 @@ class Worker extends Thread {
 
 		String message; // Data structure to store the output message sent to the client
 		String prefix = null; // Data structure to store the message prefix (i.e. JA JB PA PB)
+		String temp;
 		
-		// Determine the prefix based on the index and then 
-		// create the output message to send to the client
+		// Determine the mode and get joke 
 		if (mode == "jokes") {
-			switch (index) {
-				case 0 : prefix = "JA"; break;
-				case 1 : prefix = "JB"; break;
-				case 2 : prefix = "JC"; break;
-				case 3 : prefix = "JD"; break;
-			}
-			message = prefix + " " + username + ": " + jokes[index];
+			temp = jokes[index];
 		}
 		else {
-			switch (index) {
-				case 0 : prefix = "PA"; break;
-				case 1 : prefix = "PB"; break;
-				case 2 : prefix = "PC"; break;
-				case 3 : prefix = "PD"; break;
-			}
-			message = prefix + " " + username + ": " + proverbs[index];
+			temp = proverbs[index];
 		}
+
+		String[] msgArr = temp.split(" ", 2);
+		message = msgArr[0] + " " + username + ": " + temp; // create the output message to send to the client
 		
 		if (secondary) 
 			message = "<S2> " + message; // Prepend <S2> if sending message to secondary server
@@ -387,39 +378,13 @@ class AdminLooper implements Runnable {
 	}
 }
 
-// Class to initiate a new worker thread for secondary server
-class SecondaryServerLooper implements Runnable {
-	UserMap userMap; // User map to lookup client's current joke or proverb index
-
-	SecondaryServerLooper(UserMap userMap) {
-		this.userMap = userMap;
-	}
-
-	public void run() {
-		int q_len = 6; // Max simultaneous connection is 6 
-		int port = 4546; // Secondary server listens on port 4546
-		Socket sock;
-
-		try {
-			ServerSocket servsock = new ServerSocket(port, q_len); // Initialize a serversocket to listen for client admin connections
-			while(true) {
-				sock = servsock.accept(); // When a connection request is sent, accept it
-				new Worker(sock, userMap, true).start(); // Run adminworker to execute the task
-			}
-		}
-		catch(IOException ioe) {
-			System.out.println("Error: " + ioe);
-		}
-	}
-}
-
 class Jokes {
 
 	static HashMap<Integer, String[]> userJokes = new HashMap<>(); // HashMap to store the users joke set
 	
 	// Method to randomize the jokes
 	public static String[] getRandomizedJokes(int uuid) {
-		String[] jokes = new String[]{"My wife and I decied we don't want to have children. We will be telling them tonight.", "I found a pen that writes underwater. It writes other words too.", "Why do you never see hippos hiding in trees. Because they are very good at it.", "To the person who stole my copy of Microsoft Office, I will find you. You have my word."};
+		String[] jokes = new String[]{"JA My wife and I decied we don't want to have children. We will be telling them tonight.", "JB I found a pen that writes underwater. It writes other words too.", "JC Why do you never see hippos hiding in trees. Because they are very good at it.", "JD To the person who stole my copy of Microsoft Office, I will find you. You have my word."};
 		String[] newJokeSet = new String[4];
 		int size = jokes.length;
 
@@ -469,7 +434,7 @@ class Proverbs {
 
 	// Method to randomize the proverbs
 	public static String[] getRandomizedProverbs(int uuid) {
-		String[] proverbs = new String[]{"Comparison is the thief of joy", "A picture is worth a thousand words.", "No good dead will go unpunished.", "A truly happy person is one who can enjoy the scenery on a detour."};
+		String[] proverbs = new String[]{"PA Comparison is the thief of joy", "PB A picture is worth a thousand words.", "PC No good dead will go unpunished.", "PD A truly happy person is one who can enjoy the scenery on a detour."};
 		String[] newProverbSet = new String[4];
 		int size = proverbs.length;
 
@@ -523,50 +488,59 @@ public class JokeServer {
 
 		Mode mode = new Mode(); // Create mode instance
 		int q_len = 10; // 10 simultaneous connection allowed
-		int port = 4545; // primary server listens on port 4545
 		Socket sock; // create communication socket
-
 		
 		UserMap userMap = new UserMap(); // Initialize user map to keep track of all clients for server one
 		
-		System.out.println("Luis Norman's Joke server one starting up listening at 4545"); // Print to the console that the server is up and running 
-
 		boolean secondary = false; // Flag to see if secondary sever is requested
 
 		// Check if secondary server should be started 
 		if (args.length > 0) {
 			if (args[0].equals("secondary")) {
 				secondary = true; // set the secondary flag to true
-				System.out.println("\nLuis Norman's Joke server two starting up listening at 4546"); // Print to the console that the secondary server is up and running 
 			}
 		}
 
-		// Spawn off a thread asynchronously to listen for client admin connections on port 5051
-		AdminLooper AL = new AdminLooper(mode, 5050); 
-		Thread t = new Thread(AL);
-		t.start();
-
 		// Checking if secondary server was requested
 		if (secondary == true) {
-			// Spawn off an asychronous thread to listen for client connections on different port
-			SecondaryServerLooper SL = new SecondaryServerLooper(new UserMap());
-			Thread t2 = new Thread(SL);
-			t2.start();
+
+			System.out.println("Luis Norman's Joke server two starting up listening at 4546"); // Print to the console that the secondary server is up and running 
+
+			int port = 4546; // secondary server listens on port 4546
 
 			// Spawn off a thread asynchronously to listen for client admin connections on port 5051
-			AdminLooper AL2 = new AdminLooper(mode, 5051); 
-			Thread t3 = new Thread(AL2);
-			t3.start();
+			AdminLooper AL = new AdminLooper(mode, 5051); 
+			Thread t = new Thread(AL);
+			t.start();
 
+			ServerSocket serversock = new ServerSocket(port, q_len); // Initialize a serversocket to listen for client connections
+
+			while (true) {
+				sock = serversock.accept(); // Accept incoming client connection request
+				new Worker(sock, userMap, true).start(); // Once we get a socket and accept the connection, start a worker thread
+			}
+
+		}
+
+		else {
+			System.out.println("Luis Norman's Joke server one starting up listening at 4545"); // Print to the console that the server is up and running 
+
+			int port = 4545; // primary server listens on port 4545
+
+			// Spawn off a thread asynchronously to listen for client admin connections on port 5051
+			AdminLooper AL = new AdminLooper(mode, 5050); 
+			Thread t = new Thread(AL);
+			t.start();
+
+			ServerSocket serversock = new ServerSocket(port, q_len); // Initialize a serversocket to listen for client connections
+
+			while (true) {
+				sock = serversock.accept(); // Accept incoming client connection request
+				new Worker(sock, userMap, false).start(); // Once we get a socket and accept the connection, start a worker thread
+			}
 		}
 		
-		ServerSocket serversock = new ServerSocket(port, q_len); // Initialize a serversocket to listen for client connections
-
-		while (true) {
-			sock = serversock.accept(); // Accept incoming client connection request
-			new Worker(sock, userMap, false).start(); // Once we get a socket and accept the connection, start a worker thread
-
-		}
+		
 	}
 	
 }

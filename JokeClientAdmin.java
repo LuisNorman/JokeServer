@@ -121,8 +121,7 @@ public class JokeClientAdmin {
 				System.out.println("Error: "+x);
 			}	
 		} while(true);
-		System.out.println("Quitting client per user request.");
-
+		
 	}
 
 	// Method to change the current's server mode from

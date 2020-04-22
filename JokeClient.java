@@ -128,8 +128,7 @@ public class JokeClient {
 					break; // break loop if requested by client
 				}
 
-
-				// Check if client wants to get joke or proverb
+				// Retrieve client's get joke or proverb
 				else {
 					if (currentServer == 1) // verify what server you are requesting from
 						getJokeOrProverb(uuid, serverName, username); // Get joke or proverb  
@@ -137,7 +136,6 @@ public class JokeClient {
 						getJokeOrProverb(uuid, serverName2, username); // Get joke or proverb 
 				} 
 					
-
 			}
 			catch (IOException x) {
 				System.out.println("Error: " + x);
